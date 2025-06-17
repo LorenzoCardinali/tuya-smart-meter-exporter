@@ -3,18 +3,22 @@ from wsgiref.simple_server import make_server
 import time
 import tinytuya
 import threading
+import os
 
 # Exporter Configuration
-EXPORTER_PORT = 9999
+EXPORTER_PORT = int(os.getenv("EXPORTER_PORT", "9999"))
 
 # Device Configuration
 DEVICE_CONFIGS = [
     {
-        "ip": "",
-        "device_id": "",
-        "local_key": ""
+        "ip": os.getenv("DEVICE_IP"),
+        "device_id": os.getenv("DEVICE_ID"),
+        "local_key": os.getenv("DEVICE_LOCAL_KEY"),
     }
 ]
+
+if not DEVICE_CONFIGS[0]["ip"] or not DEVICE_CONFIGS[0]["device_id"] or not DEVICE_CONFIGS[0]["local_key"]:
+    raise ValueError("Please set DEVICE_IP, DEVICE_ID, and DEVICE_LOCAL_KEY environment variables.")
 
 # Prometheus Metrics
 registry = CollectorRegistry()
@@ -170,7 +174,9 @@ def metrics_app(environ, start_response):
             data = _metrics_cache["data"]
         start_response("200 OK", [("Content-type", CONTENT_TYPE_LATEST)])
         return [data]
+    
     start_response("404 Not Found", [("Content-type", "text/plain")])
+    return [b"Not Found"]
 
 if __name__ == "__main__":
     print(f"Starting server on http://localhost:{EXPORTER_PORT}/metrics")
