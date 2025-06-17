@@ -1,0 +1,12 @@
+services:
+  tuya-smart-meter-exporter:
+    image: cardif99/tuya-smart-meter-exporter:latest
+    container_name: tuya-smart-meter-exporter
+    environment:
+      - EXPORTER_PORT=9999
+      - DEVICE_IP=0.0.0.0
+      - DEVICE_ID=<device_key>
+      - DEVICE_LOCAL_KEY=<secret_key>
+    restart: unless-stopped
+    ports:
+      - 9999:9999
