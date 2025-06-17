@@ -1,13 +1,13 @@
 # Tuya Smart Meter Exporter
 
-A lightweight Prometheus exporter for Tuya-based Smart Energy Meter with 2 channels, packaged as a minimal Docker image.
+A lightweight Prometheus exporter for Tuya-based smart energy meter with 2 channels, packaged as a minimal Docker image.
 
 ## Features
 
 - Collects real-time metrics from Tuya smart meters using the `tinytuya` library.
 - Exposes metrics on `/metrics` for Prometheus scraping.
-- Multi-device support via configuration.
-- Efficient, small Docker image based on Alpine Linux.
+- Runs efficiently in Docker or with Docker Compose.
+- Small image size based on Alpine Linux.
 
 ## Quick Start
 
@@ -17,31 +17,57 @@ A lightweight Prometheus exporter for Tuya-based Smart Energy Meter with 2 chann
 docker build -t tuya-smart-meter-exporter .
 ```
 
-### 2. Run the Exporter
+### 2. Run the Exporter with Docker
 
-Replace the device configuration in `src/tuya_exporter.py` with your device's IP, ID, and local key.
+Set your device's details as environment variables:
 
 ```bash
-docker run -d -p 9999:9999 --name tuya-exporter tuya-smart-meter-exporter
+docker run -d -p 9999:9999 \
+  -e EXPORTER_PORT=9999 \
+  -e DEVICE_IP=<device-ip> \
+  -e DEVICE_ID=<device-id> \
+  -e DEVICE_LOCAL_KEY=<device-key> \
+  tuya-smart-meter-exporter
 ```
 
-### 3. Access Metrics
+### 3. Or Use Docker Compose
+
+Edit `docker-compose.yaml` with your device info, then run:
+
+```bash
+docker compose up -d
+```
+
+Example `docker-compose.yaml`:
+```yaml
+services:
+  tuya-smart-meter-exporter:
+    image: cardif99/tuya-smart-meter-exporter:latest
+    container_name: tuya-smart-meter-exporter
+    environment:
+      - EXPORTER_PORT=9999
+      - DEVICE_IP=<device-ip>
+      - DEVICE_ID=<device-id>
+      - DEVICE_LOCAL_KEY=<device-key>
+    restart: unless-stopped
+    ports:
+      - 9999:9999
+```
+
+### 4. Access Metrics
 
 Visit [http://localhost:9999/metrics](http://localhost:9999/metrics) to see the exported metrics.
 
 ## Configuration
 
-Edit the `DEVICE_CONFIGS` list in `src/tuya_exporter.py` to add your Tuya smart meter(s):
+The exporter is configured via environment variables:
 
-```python
-DEVICE_CONFIGS = [
-    {
-        "ip": "x.x.x.x",
-        "device_id": "your_device_id",
-        "local_key": "your_local_key"
-    }
-]
-```
+- `EXPORTER_PORT`: Port to expose the metrics endpoint (default: `9999`)
+- `DEVICE_IP`: IP address of your Tuya smart meter
+- `DEVICE_ID`: Device ID of your Tuya smart meter
+- `DEVICE_LOCAL_KEY`: Local key for your Tuya smart meter
+
+**All device variables are required.**
 
 ## Prometheus Integration
 
@@ -51,13 +77,8 @@ Add a scrape config to your `prometheus.yml`:
 scrape_configs:
   - job_name: 'tuya-smart-meter'
     static_configs:
-      - targets: ['tuya-exporter:9999']
+      - targets: ['localhost:9999']
 ```
-
-## Requirements
-
-- Docker
-- Tuya smart meter (with local access enabled)
 
 ## Development
 
@@ -70,14 +91,9 @@ pip install -r requirements.txt
 Run the exporter:
 
 ```bash
+export EXPORTER_PORT=9999
+export DEVICE_IP=<device-ip>
+export DEVICE_ID=<device-id>
+export DEVICE_LOCAL_KEY=<device-key>
 python src/tuya_exporter.py
 ```
-
-## License
-
-MIT License
-
----
-
-**Note:**  
-Make sure your Tuya device supports local access and you have the correct `device_id`
